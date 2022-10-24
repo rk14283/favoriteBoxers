@@ -20,7 +20,7 @@ app.get("/", (req,res) =>{
 })
 
 
-//GET /boxers
+//GET /boxers   
 //how are these two different 
 //GET for all students 
 app.get("/boxers", (req,res) =>
