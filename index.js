@@ -6,35 +6,57 @@ const app = express();
 app.use(express.json()) //"use" ing middleware
 const PORT = process.env.PORT || 5000;
 
-const boxers = [
+let boxers = [
 {id:1, name:"Thomas Hearns"},
 {id: 2, name: "Roberto Duran"}, 
 {id: 3, name: "Sugar Ray Leonard"},
 {id: 4, name: "Marvelous Marvin Hagler"}
 ]
 
-//GET /students 
+
+//GET /
+app.get("/", (req,res) =>{
+    res.send("This is the night of champions")
+})
+
+
+//GET /boxers
+//how are these two different 
+//GET for all students 
 app.get("/boxers", (req,res) =>
 {
     res.json(boxers); 
 })
 
-GET /
-app.get("/", (req,res) =>{
-    res.send("This is the night of champions")
-})
-
 //GET /boxers/:id
+//GET for 1 student 
 //route parameter -> :id 
 app.get("/boxers/:id", (req,res)=>{
-    console.log("Hi", Number(req.params)); 
-    const boxer = boxers.find(
-        (boxer) => boxer.id === Number(req.params.id)
-    );
-    res.json(boxers); 
+    //I do not need number because it is already in number, but if I use number I get NAN
+    console.log("Hi",req.params); 
+    const boxer = findBoxerByID(Number(req.params.id));
+
+    if(!boxer){
+        return res.status(404).json({message:"boxer not found"}); 
+    }
+    res.json(boxer); 
 }); 
 
 
+//DELETE boxers ID
+app.delete("/boxers/:id",(req,res)=> {
+    const boxer = findBoxerByID(Number(req.params.id))
+
+    if(!boxer){
+        return res.status(404).json({message:"boxer not found"}); 
+    }
+
+    console.log("Boxer to delete",boxer);
+
+    //delete boxer
+    boxers = boxers.filter((boxer)=>boxer.id !==Number(req.params.id)); 
+    res.json({message: "Boxer deleted"})
+}); 
 
 //POST Boxers 
 app.post("/boxers", (req,res) => {
@@ -46,6 +68,10 @@ app.post("/boxers", (req,res) => {
 }); 
 
 
+
+function findBoxerByID(boxerId){
+    return boxers.find((boxer) => boxer.id ===boxerId)
+}
 
 app.listen(PORT, ()=>{
     console.log(`Listening on ${PORT}`)
