@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-
+const z = require("zod"); 
 
 
 app.use(express.json()) //"use" ing middleware
@@ -63,12 +63,40 @@ app.delete("/boxers/:id",(req,res)=> {
 
 //CREATE
 //POST Boxers 
+
+const Boxer = z.object({
+    name: z.string().min(2),
+    weight: z.string().min(2),
+}); 
+
+
 app.post("/boxers", (req,res) => {
-    console.log("Are we getting a post request?", req.body); 
-    const newBoxers = {id: boxers.length+1, name:req.body.name, weight:req.body.weight};
-    boxers.push(newBoxers)
-    //201 means created
-    res.status(201).json({message:"New boxer added to the hall of fame"})
+    try{
+
+        
+        const validatedInput = Boxer.parse(req.body); 
+        console.log(validatedInput); 
+        
+        const newBoxer = {
+            id: boxers.length +1, 
+            name: req.body.name,
+            weight: req.body.weight 
+        }
+        boxers.push(newBoxer)
+        //201 means created
+        res.status(201).json({message:"New boxer added to the hall of fame"})
+    }
+    catch(error){
+        console.log(error.issues, error.name); 
+
+        if (error.name ==="ZodError"){
+            return res
+            .status(400)
+            .json({message:"validation error", errors:error.issues});
+        } else{
+            return res.status(500).json({message:"Something went wrong sorry!"})
+        }
+    }
 }); 
 
 
