@@ -102,36 +102,46 @@ app.post("/boxers", (req,res) => {
 
 app.patch("/boxers/:id", (req,res)=>{
     const boxer = findBoxerByID(Number(req.params.id));
-
-    //update boxer ->current boxer, data from the request
-    //combine the 2
-
-    if(!boxer){
-        return res.status(404).json({message:"boxer not found"}); 
-    }
-    console.log("CURRENT BOXER:", boxer, "DATA FROM THE REQUEST", req.body);
     
-    //combine 2 things, current boxer + data from the request
-    //this will change only the name    
-    //boxer.name =req.body.name; 
-   
+    let key = z.object({
+        name: z.string().min(2),
+        weight: z.string().min(2),
+    }); 
     for (key in req.body){
-        //this is for testing which key is it 
         console.log("KEY", key); 
-        //key can be boxer name or boxer weight 
-        //if we are sending name we will update it
         boxer[key] = req.body[key]; 
     }
+    
     res.json(boxer); 
 
-})
+ });
 
-function findBoxerByID(boxerId){
-    return boxers.find((boxer) => boxer.id ===boxerId)
-}
+
+
 
 app.listen(PORT, ()=>{
     console.log(`Listening on ${PORT}`)
 
 })
+
+
+
+function findBoxerByID(boxerId){
+    return boxers.find((boxer) => boxer.id ===boxerId)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
