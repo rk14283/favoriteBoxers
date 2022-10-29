@@ -101,19 +101,31 @@ app.post("/boxers", (req,res) => {
 
 
 app.patch("/boxers/:id", (req,res)=>{
-    const boxer = findBoxerByID(Number(req.params.id));
-    
-    //I needed this as well
-    const validatedInput = Boxer.parse(req.body); 
-    console.log(validatedInput); 
-    
-    for (key in req.body){
-        console.log("KEY", key); 
-        boxer[key] = req.body[key]; 
-    }
-    
-    res.json(boxer); 
+    try{
+        const boxer = findBoxerByID(Number(req.params.id));
+        
+        //This was the main thing to fix, not key 
+        const validatedInput = Boxer.parse(req.body); 
+        console.log(validatedInput); 
 
+        for (key in req.body){
+            console.log("KEY", key); 
+            boxer[key] = req.body[key]; 
+        }
+        
+        res.json(boxer); 
+
+} catch(error){
+    console.log(error.issues, error.name); 
+
+    if (error.name ==="ZodError"){
+        return res
+        .status(400)
+        .json({message:"validation error", errors:error.issues});
+    } else{
+        return res.status(500).json({message:"Something went wrong sorry!"})
+    }
+}
  });
 
 
