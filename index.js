@@ -103,10 +103,14 @@ app.post("/boxers", (req,res) => {
 app.patch("/boxers/:id", (req,res)=>{
     const boxer = findBoxerByID(Number(req.params.id));
     
-    let key = z.object({
-        name: z.string().min(2),
-        weight: z.string().min(2),
-    }); 
+    //I needed this as well
+    const validatedInput = Boxer.parse(req.body); 
+    console.log(validatedInput); 
+
+    // let key = z.object({
+    //     name: z.string().min(2),
+    //     weight: z.string().min(2),
+    // }); 
     for (key in req.body){
         console.log("KEY", key); 
         boxer[key] = req.body[key]; 
@@ -128,20 +132,5 @@ app.listen(PORT, ()=>{
 
 function findBoxerByID(boxerId){
     return boxers.find((boxer) => boxer.id ===boxerId)}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
