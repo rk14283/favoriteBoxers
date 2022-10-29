@@ -106,11 +106,7 @@ app.patch("/boxers/:id", (req,res)=>{
     //I needed this as well
     const validatedInput = Boxer.parse(req.body); 
     console.log(validatedInput); 
-
-    // let key = z.object({
-    //     name: z.string().min(2),
-    //     weight: z.string().min(2),
-    // }); 
+    
     for (key in req.body){
         console.log("KEY", key); 
         boxer[key] = req.body[key]; 
