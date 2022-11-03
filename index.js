@@ -1,7 +1,8 @@
 const express = require("express");
 const app = express();
 const z = require("zod"); 
-
+const { PrismaClient } = require("@prisma/client");
+const  prisma = new PrismaClient(); 
 
 app.use(express.json()) //"use" ing middleware
 const PORT = process.env.PORT || 5000;
@@ -23,8 +24,9 @@ app.get("/", (req,res) =>{
 //READ 
 //how are these two different 
 //GET for all boxers
-app.get("/boxers", (req,res) =>
+app.get("/boxers", async (req,res) =>
 {
+    const boxers = await prisma.boxer.findMany(); 
     res.json(boxers); 
 })
 
@@ -32,59 +34,75 @@ app.get("/boxers", (req,res) =>
 //GET /boxers/:id
 //GET for 1 student 
 //route parameter -> :id 
-app.get("/boxers/:id", (req,res)=>{
+app.get("/boxers/:id", async (req,res)=>{
     //I do not need number because it is already in number, but if I use number I get NAN
-    console.log("Hi",req.params); 
-    const boxer = findBoxerByID(Number(req.params.id));
+    //console.log("Hi",req.params); 
+    try { 
+         const boxer = await prisma.boxer.findUniqueOrThrow({
+        where: {id:Number (req.params.id)},
+    })  
+    
+    res.json(boxer); 
 
-    if(!boxer){
+
+    }
+
+    catch(error){   
+        console.log(error.name); 
+         if(error.name ==="NotFoundError"){
         return res.status(404).json({message:"boxer not found"}); 
     }
-    res.json(boxer); 
+    else{
+        console.log(error); 
+        return res.status(500).json({message:"something went wrong"});
+
+    }
+
+    }
+  
 }); 
 
 
 //DELETE
 //DELETE boxers ID
-app.delete("/boxers/:id",(req,res)=> {
-    const boxer = findBoxerByID(Number(req.params.id))
+app.delete("/boxers/:id",async (req,res)=> {
 
-    if(!boxer){
+    try{
+        const boxer = await prisma.boxer.delete({
+        where:{ id:Number(req.params.id) }, 
+    }); 
+    res.json({ message: "Boxer deleted" } ); 
+} 
+catch(error){ 
+    
+    if(error.code === "P2025"){
         return res.status(404).json({message:"boxer not found"}); 
+    }else{
+        console.log(error)
+        return res.status(500).json({ message: "Something went wrong" });
+
     }
-
-    console.log("Boxer to delete",boxer);
-
-    //delete boxer
-    boxers = boxers.filter((boxer)=>boxer.id !==Number(req.params.id)); 
-    res.json({message: "Boxer deleted"})
+}
 }); 
 
 
 //CREATE
 //POST Boxers 
 
-const Boxer = z.object({
+const BoxerSchema = z.object({
     name: z.string().min(2),
     weight: z.string().min(2),
-}); 
+}).strict(); 
 
 
-app.post("/boxers", (req,res) => {
+
+app.post("/boxers", async (req,res) => {
     try{
-
+        const validatedInput = BoxerSchema.parse(req.body); 
+        const newBoxer = await prisma.boxer.create ({ data: validatedInput }); 
         
-        const validatedInput = Boxer.parse(req.body); 
-        console.log(validatedInput); 
-        
-        const newBoxer = {
-            id: boxers.length +1, 
-            name: req.body.name,
-            weight: req.body.weight 
-        }
-        boxers.push(newBoxer)
         //201 means created
-        res.status(201).json({message:"New boxer added to the hall of fame"})
+        res.status(201).json({ message:"New boxer added to the hall of fame", boxer: newBoxer });
     }
     catch(error){
         console.log(error.issues, error.name); 
@@ -100,30 +118,31 @@ app.post("/boxers", (req,res) => {
 }); 
 
 
-app.patch("/boxers/:id", (req,res)=>{
+app.patch("/boxers/:id", async (req,res)=>{
     try{
-        const boxer = findBoxerByID(Number(req.params.id));
-        
+        const validatedInput = BoxerSchema.parse(req.body);
         //This was the main thing to fix, not key 
-        const validatedInput = Boxer.parse(req.body); 
-        console.log(validatedInput); 
+        const boxer = await prisma.boxer.update({
 
-        for (key in req.body){
-            console.log("KEY", key); 
-            boxer[key] = req.body[key]; 
-        }
+            where:{
+                id: Number(req.params.id),
+            },
+            data: validatedInput, 
+
+        }); 
         
         res.json(boxer); 
 
 } catch(error){
-    console.log(error.issues, error.name); 
-
     if (error.name ==="ZodError"){
         return res
         .status(400)
         .json({message:"validation error", errors:error.issues});
-    } else{
-        return res.status(500).json({message:"Something went wrong sorry!"})
+    } else if (error.code ==="P2025") {
+        return res.status(404).json({message:"boxer not found"}); 
+    }else {
+        console.log("UNEXPECTED!", error); 
+        return res.status(500).json({ message: "Something went wrong, sorry!" });
     }
 }
  });
@@ -138,7 +157,5 @@ app.listen(PORT, ()=>{
 
 
 
-function findBoxerByID(boxerId){
-    return boxers.find((boxer) => boxer.id ===boxerId)}
 
 
